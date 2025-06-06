@@ -1,7 +1,8 @@
 # Performance Trend Chart
 
 一个基于 Vue 3 和 ECharts 的性能趋势预测图表组件，用于展示和预测性能指标数据。
-![截屏2025-06-06 17 47 10](https://github.com/user-attachments/assets/57b42d1b-2c28-4899-9991-f0ca10d9aafb)
+解决问题：使用连接线串联‘实际’和‘预测’数据，使折线图保持完整连续。
+![截屏2025-06-06 18 13 14](https://github.com/user-attachments/assets/f541ddb8-dc51-4772-b21a-155daa0a4380)
 
 
 ## 功能特点
