@@ -323,8 +323,8 @@ export default {
         processedTrendData[0] // 预测数据的第一个点
     ];
 
-    return {
-      chartOption: {
+    // 定义 chartOption 在 data 函数的同一个作用域内，以便 formatter 可以访问 processedRawData
+    const chartOption = {
         // 标题配置
         title: [{
             text: '性能指标趋势预测',
@@ -348,34 +348,52 @@ export default {
           trigger: 'axis', // 坐标轴触发
           formatter: function (params) {
             let tooltipContent = '';
+            // Use the processedRawData and processedTrendData from the closure scope
+            // Get timestamps for the connection points (last raw data and first trend data)
+            const lastRawTime = processedRawData[processedRawData.length - 1][0];
+            const firstTrendTime = processedTrendData[0][0];
+
             // Sort params by data index to ensure correct time display first
             params.sort((a, b) => a.dataIndex - b.dataIndex);
 
-            params.forEach(item => {
-              const value = item.value[1]; // 数据值
-              let formattedValue;
-              if (value >= 1e9) {
-                formattedValue = (value / 1e9).toFixed(2) + ' Gbit/s';
-              } else if (value >= 1e6) {
-                formattedValue = (value / 1e6).toFixed(2) + ' Mbit/s';
-              } else {
-                formattedValue = value.toFixed(2) + ' bit/s';
-              }
-              // 使用 JavaScript Date 方法处理时间戳
-              const date = new Date(item.value[0]);
-              const year = date.getFullYear();
-              const month = ('0' + (date.getMonth() + 1)).slice(-2); // 月份从0开始，需要+1
-              const day = ('0' + date.getDate()).slice(-2);
-              const hours = ('0' + date.getHours()).slice(-2);
-              const minutes = ('0' + date.getMinutes()).slice(-2);
-              const time = `${year}-${month}-${day} ${hours}:${minutes}`;
+            let timeDisplayed = false;
 
-              tooltipContent += `${item.marker} ${item.seriesName}: ${formattedValue}<br/>`;
-               // 只在第一个系列项前显示时间
-              if (params.indexOf(item) === 0) {
-                   tooltipContent = `<b>${time}</b><br/>` + tooltipContent;
+            params.forEach(item => {
+              const timestamp = item.value[0];
+              const seriesName = item.seriesName;
+              const value = item.value[1]; // 数据值
+
+              // Check if it's the "连接线" at a connection point
+              const isConnectingLineAtConnection = (seriesName === '连接线' && (timestamp === lastRawTime || timestamp === firstTrendTime));
+
+              // If it's NOT the connecting line at a connection point, include it
+              if (!isConnectingLineAtConnection) {
+                  let formattedValue;
+                  if (value >= 1e9) {
+                    formattedValue = (value / 1e9).toFixed(2) + ' Gbit/s';
+                  } else if (value >= 1e6) {
+                    formattedValue = (value / 1e6).toFixed(2) + ' Mbit/s';
+                  } else {
+                    formattedValue = value.toFixed(2) + ' bit/s';
+                  }
+
+                  // Display time only once at the beginning
+                  if (!timeDisplayed) {
+                      const date = new Date(timestamp);
+                      const year = date.getFullYear();
+                      const month = ('0' + (date.getMonth() + 1)).slice(-2);
+                      const day = ('0' + date.getDate()).slice(-2);
+                      const hours = ('0' + date.getHours()).slice(-2);
+                      const minutes = ('0' + date.getMinutes()).slice(-2);
+                      const time = `${year}-${month}-${day} ${hours}:${minutes}`;
+                      tooltipContent = `<b>${time}</b><br/>`;
+                      timeDisplayed = true;
+                  }
+
+                  tooltipContent += `${item.marker} ${seriesName}: ${formattedValue}<br/>`;
               }
             });
+
             return tooltipContent;
           }
         },
@@ -553,12 +571,13 @@ export default {
                 }],
                 global: false
               }
-            },
-            legendSymbol: 'rect',
-            legendHoverLink: true
+            }
           }
         ]
-      }
+    };
+
+    return {
+      chartOption // Return the constructed chartOption
     };
   }
 };
